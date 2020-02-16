@@ -3,7 +3,7 @@ apply plugin: 'com.android.application'
 android {
     compileSdkVersion 26
     defaultConfig {
-        applicationId "utopia.android.util"
+        applicationId "utopia.android.test.objnet"
         minSdkVersion 19
         targetSdkVersion 26
         versionCode 1
