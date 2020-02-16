@@ -1,0 +1,68 @@
+import java.util.regex.Pattern;
+
+apply plugin: 'maven'
+apply plugin: 'maven-publish'
+
+def getGroupId(module) {
+    def result = []
+    def manifest = project(':' + module).file('src/main/AndroidManifest.xml')
+    manifest.eachLine { line ->
+        def re = Pattern.compile('package="(.+?)"').matcher(line)
+        if (re.find()) {
+            def sPkg = re.group(1).split('\\.')
+            def str = ''
+            for (int i = 0; i < Math.min(sPkg.length, 3); i++) {
+                if (str.length() > 0) {
+                    str += '.'
+                }
+                str += sPkg[i]
+            }
+            result.add(str)
+        }
+    }
+    return result[0]
+}
+
+def getArtifactId(module) {
+    def result = []
+    def manifest = project(':' + module).file('src/main/AndroidManifest.xml')
+    manifest.eachLine { line ->
+        def re = Pattern.compile('package="(.+?)"').matcher(line)
+        if (re.find()) {
+            def sPkg = re.group(1).split('\\.')
+            def str = ''
+            for (int i = 3; i < sPkg.length; i++) {
+                if (str.length() > 0) {
+                    str += '_'
+                }
+                str += sPkg[i]
+            }
+            result.add(str)
+        }
+    }
+    return result[0]
+}
+
+def getVersion(module) {
+    return project(':' + module).android.defaultConfig.versionName
+}
+
+project.group = getGroupId(project.name)
+project.archivesBaseName = getArtifactId(project.name)
+project.version = getVersion(project.name)
+
+uploadArchives {
+    repositories {
+        def mavenLocalUrl = mavenLocal().getUrl()
+        mavenDeployer {
+            repository(url: mavenLocalUrl)
+        }
+    }
+    task androidSourcesJar(type: Jar) {
+        classifier = 'sources'
+        from android.sourceSets.main.java.sourceFiles
+    }
+    artifacts {
+        archives androidSourcesJar
+    }
+}
