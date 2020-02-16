@@ -28,7 +28,7 @@ class INetwork:
             'params': params,
         })
         if not event.wait(timeout=timeout):
-            raise TimeoutError('remote not responsed')
+            raise TimeoutError('remote response timeout')
         if event.e is not None:
             raise RemoteException(event.e)
         return event.r
@@ -66,7 +66,7 @@ class BroadcastNetwork(INetwork):
     def __init__(self, serial=None):
         if serial is None:
             serial = get_default_serial()
-            assert serial is not None, 'device not found'
+            assert serial is not None, 'default device not found'
         self.serial = serial
 
     def send(self, pkgname, data):
@@ -75,12 +75,12 @@ class BroadcastNetwork(INetwork):
         text = os.popen(f'adb -s {self.serial} shell am broadcast -a {action} -e data {data}').read()
         m = re.search(r', data="([0-9a-fA-F]*)"', text)
         if not m:
-            raise EOFError('remote not responsed')
+            raise EOFError('remote response stopped')
         data = json.loads(bytes.fromhex(m.group(1)).decode())
         self.recv(data)
 
 
-# 哈希运算
+# 哈希算法
 def hashCode(string):
     h = numpy.int32(0)
     for char in string:
@@ -112,7 +112,7 @@ class SocketNetwork(INetwork):
                 except ConnectionError:
                     b = b''
                 if not b:
-                    raise EOFError('remote not responsed')
+                    raise EOFError('remote response stopped')
                 buffer += b
                 if b'\x00' in buffer:
                     buffer = buffer.split(b'\x00')[0]
