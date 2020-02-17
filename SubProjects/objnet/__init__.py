@@ -46,15 +46,17 @@ class INetwork:
             event.set()
 
 
-# 获取默认设备号
-def get_default_serial():
-    serial = None
-    text = os.popen('adb devices').read()
-    for line in text.split('\n'):
-        if line.endswith('device'):
-            serial = line.split()[0]
-            break
-    return serial
+# 创建命令行句柄（安卓端）
+def new_shell():
+    return lambda cmd: os.popen(cmd).read()
+
+
+# 创建命令行句柄（主机端）
+def new_adb_shell(serial=None):
+    if serial is None:
+        return lambda cmd: os.popen(f'adb shell {cmd}').read()
+    else:
+        return lambda cmd: os.popen(f'adb -s {serial} shell {cmd}').read()
 
 
 # 包名映射广播号
@@ -63,16 +65,13 @@ def get_action_by_pkgname(pkgname):
 
 
 class BroadcastNetwork(INetwork):
-    def __init__(self, serial=None):
-        if serial is None:
-            serial = get_default_serial()
-            assert serial is not None, 'default device not found'
-        self.serial = serial
+    def __init__(self, shell):
+        self.shell = shell
 
     def send(self, pkgname, data):
         action = get_action_by_pkgname(pkgname)
         data = json.dumps(data).encode().hex()
-        text = os.popen(f'adb -s {self.serial} shell am broadcast -a {action} -e data {data}').read()
+        text = self.shell(f'am broadcast -a {action} -e data {data}')
         m = re.search(r', data="([0-9a-fA-F]*)"', text)
         if not m:
             raise EOFError('remote response stopped')
