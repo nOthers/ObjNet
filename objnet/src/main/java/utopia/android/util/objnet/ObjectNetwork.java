@@ -113,8 +113,8 @@ public class ObjectNetwork {
             }
             response.put("r", object.invoke(methodName, args));
         } catch (Throwable t) {
-            String tMsg = t.getMessage();
-            response.put("e", tMsg != null ? tMsg : "");
+            String str = t.toString();
+            response.put("e", str != null ? str : "");
         }
         return JSONObject.toJSONString(response, SerializerFeature.WriteMapNullValue);
     }
