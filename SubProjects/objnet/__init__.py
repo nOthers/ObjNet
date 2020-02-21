@@ -1,5 +1,6 @@
 import re
 import os
+import time
 import json
 import numpy
 import socket
@@ -16,18 +17,28 @@ class RemoteException(BaseException):
 
 class INetwork:
     # 访问对象网络服务
-    def request(self, pkgname, object, method, *params, timeout=None):
-        xid = next(UNIQUE) % 2**16
-        event = threading.Event()
-        EVENTS[xid] = event
-        self.send(pkgname, {
-            'xid': xid,
-            'object': object,
-            'method': method,
-            'params': params,
-        })
-        if not event.wait(timeout=timeout):
-            raise TimeoutError('remote response timeout')
+    def request(self, pkgname, object, method, *params, timeout=16, retry=2):
+        while True:
+            xid = next(UNIQUE) % 2**16
+            event = threading.Event()
+            EVENTS[xid] = event
+            try:
+                self.send(pkgname, {
+                    'xid': xid,
+                    'object': object,
+                    'method': method,
+                    'params': params,
+                })
+                if not event.wait(timeout=timeout):  # 同步模式超时参数无效
+                    raise TimeoutError('remote response timeout')
+            except BaseException:
+                EVENTS.pop(xid, None)
+                if not retry:
+                    raise
+                retry -= 1
+                time.sleep(1)
+            else:
+                break
         if event.e is not None:
             raise RemoteException(event.e)
         return event.r
