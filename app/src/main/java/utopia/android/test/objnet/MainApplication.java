@@ -11,9 +11,9 @@ public class MainApplication extends Application {
     @Override
     public void onCreate() {
         super.onCreate();
+        ObjectNetwork.register("application", new ActualObject(this));
         ObjectNetwork.startup(this, new BroadcastNetwork());
         ObjectNetwork.startup(this, new SocketNetwork());
-        ObjectNetwork.register("application", new ActualObject(this));
     }
 
     public String ping() {
