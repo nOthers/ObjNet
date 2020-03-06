@@ -2,11 +2,9 @@ import re
 import os
 import time
 import json
-import numpy
 import socket
 import itertools
 import threading
-numpy.seterr(all='ignore')
 UNIQUE = itertools.count(1)
 EVENTS = {}
 
@@ -89,12 +87,20 @@ class BroadcastNetwork(INetwork):
         self.recv(data)
 
 
+# 算数溢出
+def int32(num):
+    num %= 2**32
+    if num >= 2**31:
+        num -= 2**32
+    return num
+
+
 # 哈希算法
 def hashCode(string):
-    h = numpy.int32(0)
+    h = 0
     for char in string:
-        h = numpy.int32(31) * h + numpy.uint16(ord(char))
-    return int(h)
+        h = int32(int32(31 * h) + ord(char))
+    return h
 
 
 # 包名映射端口号
