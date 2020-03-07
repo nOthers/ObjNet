@@ -13,8 +13,8 @@ import java.util.List;
 import java.util.Map;
 
 public class ObjectNetwork {
-    private final static List<INetwork> networkList = new LinkedList<>();
-    private final static Map<String, IObject> objectMap = new HashMap<>();
+    private static final List<INetwork> networkList = new LinkedList<>();
+    private static final Map<String, IObject> objectMap = new HashMap<>();
 
     /**
      * startup an network.
