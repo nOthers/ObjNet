@@ -56,15 +56,24 @@ class INetwork:
 
 # 创建命令行句柄（安卓端）
 def new_shell():
-    return lambda cmd: os.popen(cmd).read()
+    def shell(cmd):
+        with os.popen(cmd) as p:
+            return p.read()
+    return shell
 
 
 # 创建命令行句柄（主机端）
 def new_adb_shell(serial=None):
     if serial is None:
-        return lambda cmd: os.popen(f'adb shell {cmd}').read()
+        def shell(cmd):
+            with os.popen(f"adb shell {cmd}") as p:
+                return p.read()
+        return shell
     else:
-        return lambda cmd: os.popen(f'adb -s {serial} shell {cmd}').read()
+        def shell(cmd):
+            with os.popen(f"adb -s {serial} shell {cmd}") as p:
+                return p.read()
+        return shell
 
 
 # 包名映射广播号
@@ -79,7 +88,7 @@ class BroadcastNetwork(INetwork):
     def send(self, pkgname, data):
         action = get_action_by_pkgname(pkgname)
         data = json.dumps(data).encode().hex()
-        text = self.shell(f'am broadcast -a {action} -e data {data}')
+        text = self.shell(f"am broadcast -a {action} -e data {data}")
         m = re.search(r', data="([0-9a-fA-F]*)"', text)
         if not m:
             raise EOFError('remote response stopped')
