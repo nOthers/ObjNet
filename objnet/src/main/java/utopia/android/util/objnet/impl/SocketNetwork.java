@@ -14,6 +14,7 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
+import java.util.concurrent.RejectedExecutionException;
 
 public class SocketNetwork implements INetwork, Runnable {
     private ServerSocket mServerSocket;
@@ -47,6 +48,7 @@ public class SocketNetwork implements INetwork, Runnable {
     @Override
     public void onShutDown() {
         try {
+            mExecutorService.shutdown();
             mServerSocket.close();
         } catch (RuntimeException e) {
             throw e;
@@ -81,18 +83,21 @@ public class SocketNetwork implements INetwork, Runnable {
                     for (int i = 0; i < bytes.length; i++) {
                         bytes[i] = buffer.remove(0);
                     }
-                    mExecutor.execute(new Runnable() {
-                        @Override
-                        public void run() {
-                            String requestJson = new String(bytes);
-                            String responseJson = ObjectNetwork.doResponse(requestJson);
-                            try {
-                                output.write(responseJson.getBytes());
-                                output.write(0);
-                            } catch (IOException ignore) {
+                    try {
+                        mExecutor.execute(new Runnable() {
+                            @Override
+                            public void run() {
+                                String requestJson = new String(bytes);
+                                String responseJson = ObjectNetwork.doResponse(requestJson);
+                                try {
+                                    output.write(responseJson.getBytes());
+                                    output.write(0);
+                                } catch (IOException ignore) {
+                                }
                             }
-                        }
-                    });
+                        });
+                    } catch (RejectedExecutionException ignore) {
+                    }
                 }
             } catch (IOException e) {
                 try {
