@@ -109,6 +109,6 @@ public class SocketNetwork implements INetwork, Runnable {
     }
 
     public static int getPortByPackageName(String packageName) {
-        return 32768 + (packageName.hashCode() % 32768);
+        return 32768 + (packageName.hashCode() & 32767);
     }
 }
